@@ -9,6 +9,7 @@ Rows = 6
 Columns = 7
 Depth = 4
 
+
 class Board:
     def __init__(self):
         self.board = np.zeros((Rows, Columns))
@@ -19,7 +20,7 @@ class Board:
     def is_valid_location(self, col):
         return self.board[Rows - 1][col] == 0
 
-    def get_next_open_row(self, col):
+    def empty_row(self, col):
         for r in range(Rows):
             if self.board[r][col] == 0:
                 return r
@@ -27,7 +28,7 @@ class Board:
     def print_board(self):
         print(np.flip(self.board, 0))
 
-    def check_for_fours(self, piece):
+    def check_fours(self, piece):
         count = 0
         for c in range(Columns - 3):  # Check horizontal
             for r in range(Rows):
@@ -72,23 +73,23 @@ class Board:
             row_array = [int(i) for i in list(self.board[r, :])]
             for c in range(Columns - 3):
                 play = row_array[c:c + 4]
-                score += evaluate_window(play, piece)
+                score += evaluate_play(play, piece)
 
         for c in range(Columns):  # Score Verticl
             col_array = [int(i) for i in list(self.board[:, c])]
             for r in range(Rows - 3):
                 play = col_array[r:r + 4]
-                score += evaluate_window(play, piece)
+                score += evaluate_play(play, piece)
 
         for r in range(Rows - 3):  # Score positive diagonal
             for c in range(Columns - 3):
                 play = [self.board[r + i][c + i] for i in range(4)]
-                score += evaluate_window(play, piece)
+                score += evaluate_play(play, piece)
 
         for r in range(Rows - 3):  # Score negative diagonal
             for c in range(Columns - 3):
                 play = [self.board[r + 3 - i][c + i] for i in range(4)]
-                score += evaluate_window(play, piece)
+                score += evaluate_play(play, piece)
 
         return score
 
@@ -96,7 +97,7 @@ class Board:
         return len(self.get_valid_locations()) == 0
 
 
-def evaluate_window(play, piece):
+def evaluate_play(play, piece):
     score = 0
     opp_piece = Human
     if piece == Human:
@@ -193,7 +194,7 @@ def minimax(board, depth, alpha, beta, max):
         return column, value
 
 
-def play_game():
+def run_game():
     board = Board()
     board.print_board()
     game_over = False
@@ -204,7 +205,7 @@ def play_game():
         if turn == Human:
             col = int(input("Player 1 Make your Selection (0-6): "))
             if board.is_valid_location(col):
-                row = board.get_next_open_row(col)
+                row = board.empty_row(col)
                 board.drop_piece(row, col, Human)
 
         else:
@@ -214,22 +215,22 @@ def play_game():
                 col, minimax_score = minimax_without_pruning(board, Depth, True)
 
             if board.is_valid_location(col):
-                row = board.get_next_open_row(col)
+                row = board.empty_row(col)
                 board.drop_piece(row, col, AI)
         board.print_board()
 
-        print(f"Player 1 Score: {board.check_for_fours(Human)}")
-        print(f"AI Score: {board.check_for_fours(AI)}")
+        print(f"Player 1 Score: {board.check_fours(Human)}")
+        print(f"AI Score: {board.check_fours(AI)}")
 
         if board.is_terminal_node():
             game_over = True
             print("Game Over!")
-            print(f"Final Player 1 Score: {board.check_for_fours(Human)}")
-            print(f"Final AI Score: {board.check_for_fours(AI)}")
+            print(f"Final Player 1 Score: {board.check_fours(Human)}")
+            print(f"Final AI Score: {board.check_fours(AI)}")
 
         turn += 1
         turn = turn % 2
 
 
 if __name__ == "__main__":
-    play_game()
+    run_game()

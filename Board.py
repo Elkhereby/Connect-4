@@ -24,6 +24,8 @@ class Board:
             self.rows,self.cols = self.current_state.shape
             self.available_places = (self.current_state==0).sum()
 
+    def __hash__(self):
+        return hash(self.current_state.tostring())
     def __eq__(self, other):  # operator overloading in equality and comparison and indexing
         return self.f == other.f
 
@@ -97,7 +99,12 @@ class Board:
             if self.current_state[i][col] == 0:
                 return i
         return None  # No empty tile in this column
+    def first_non_empty_tile(self,col):
+        for i in range(self.rows-1,-1,-1):
 
+            if self.current_state[i][col] != 0:
+                return i
+        return None  #  empty column
 
     def add_piece(self, col, value):
         row = self.first_empty_tile(col)
@@ -106,7 +113,13 @@ class Board:
             self.available_places -= 1
             return True
         return False
-
+    def remove_piece(self,col):
+        row = self.first_non_empty_tile(col)
+        if row is not None:
+            self.current_state[row][col] = 0
+            self.available_places -= 1
+            return True
+        return False
     def is_terminal(self):
         return self.available_places == 0
 if __name__=="__main__":

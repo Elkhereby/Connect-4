@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 
 class Board:
@@ -115,4 +117,7 @@ if __name__=="__main__":
     board.add_piece(0, 1)
     print(board.available_places)
     print("Board state:")
+    st= time.time()
     print(board.current_state)
+    end = time.time()
+    print(end-st)

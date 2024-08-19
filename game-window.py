@@ -19,6 +19,24 @@ COLUMN_COUNT = 7
 ROW_COUNT = 6
 turn = random.choice([0, 1])
 
+
+def probabilistic_column_selection(col):#----------------> check empty
+
+    if col == 0:  # Left edge
+        probability_distribution = [0.6, 0.4]
+        columns = [col, col + 1]
+    elif col == COLUMN_COUNT - 1:  # Right edge
+        probability_distribution = [0.4, 0.6]
+        columns = [col - 1, col]
+    else:
+        probability_distribution = [0.2, 0.6, 0.2]
+        columns = [col - 1, col, col + 1]
+
+    selected_col = random.choices(columns, probability_distribution)[0]
+
+    return selected_col
+
+
 def draw_board(board):
     for c in range(COLUMN_COUNT):
         for r in range(ROW_COUNT):
@@ -44,11 +62,12 @@ width = SQUARE_SIZE * COLUMN_COUNT
 height = SQUARE_SIZE * (ROW_COUNT + 1)
 
 size = (width, height)
-
+algorithm = "alphabetapruning"
 screen = pygame.display.set_mode(size)
 myfont = pygame.font.SysFont("monospace", 75)
 
 board = Board()
+
 game_over = False
 
 solver = Solver()
@@ -73,7 +92,8 @@ while True:
             pygame.draw.rect(screen, BLACK, (0, 0, width, SQUARE_SIZE))
             posx = event.pos[0]
             col = int(posx / SQUARE_SIZE)
-
+            if algorithm.lower()=="ExpectMiniMax":
+                col = probabilistic_column_selection(col)
             if board.first_empty_tile(col) is not None:
                 if turn % 2 == 0:
                     if not game_over:
@@ -125,7 +145,7 @@ while True:
 
         if turn % 2 != 0:
             if not game_over:
-                col, _ = solver.solve(board, "alphabetapruning")
+                col, _ = solver.solve(board, algorithm)
                 board.add_piece(col, 1.0)  # AI player (YELLOW)
                 draw_board(board.current_state)
                 print("Ai",turn)

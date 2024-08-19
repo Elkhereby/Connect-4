@@ -99,12 +99,7 @@ class Board:
             if self.current_state[i][col] == 0:
                 return i
         return None  # No empty tile in this column
-    def first_non_empty_tile(self,col):
-        for i in range(self.rows-1,-1,-1):
 
-            if self.current_state[i][col] != 0:
-                return i
-        return None  #  empty column
 
     def add_piece(self, col, value):
         row = self.first_empty_tile(col)
@@ -113,13 +108,12 @@ class Board:
             self.available_places -= 1
             return True
         return False
-    def remove_piece(self,col):
-        row = self.first_non_empty_tile(col)
-        if row is not None:
-            self.current_state[row][col] = 0
-            self.available_places -= 1
-            return True
-        return False
+    def remove_piece(self, col):
+        for row in range(self.current_state.shape[0]):
+            if self.current_state[row][col] != 0:
+                self.current_state[row][col] = 0
+                self.available_places += 1
+                break
     def is_terminal(self):
         return self.available_places == 0
 if __name__=="__main__":

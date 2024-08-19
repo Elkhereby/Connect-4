@@ -2,7 +2,7 @@ import random
 import sys
 import numpy as np
 import pygame
-from Solver import *
+from Solver_old import *
 from Board import *
 
 pygame.init()
@@ -148,5 +148,5 @@ while True:
                 col, _ = solver.solve(board, algorithm)
                 board.add_piece(col, 1.0)  # AI player (YELLOW)
                 draw_board(board.current_state)
-                print("Ai",turn)
+                print("Ai",col)
                 turn+=1

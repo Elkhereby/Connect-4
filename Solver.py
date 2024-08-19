@@ -235,3 +235,4 @@ if __name__=="__main__":
             board.add_piece(col,2.0)
         c+=1
 
+    print(board.available_places)

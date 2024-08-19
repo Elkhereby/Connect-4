@@ -5,6 +5,7 @@ import numpy as np
 class Board:
 
     def __init__(self,parent=None, rows=6, cols=7):
+
         if parent:
             self.current_state = parent.current_state.copy()
             self.f = 0
@@ -17,6 +18,11 @@ class Board:
             self.rows = rows
             self.cols = cols
             self.available_places = int(rows * cols)
+    def load_board(self,state):
+        if state is not None:
+            self.current_state = np.array(state)
+            self.rows,self.cols = self.current_state.shape
+            self.available_places = (self.current_state==0).sum()
 
     def __eq__(self, other):  # operator overloading in equality and comparison and indexing
         return self.f == other.f
@@ -29,7 +35,7 @@ class Board:
         for row in range(self.rows):
             display_str += "| " + " | ".join(str(self.current_state[row][col]) for col in range(self.cols)) + " |\n"
         display_str += "--" * (self.cols * 3 + 1) + "\n"
-        display_str += "   " + "     ".join(str(i) for i in range(self.cols)) + "  \n"
+        display_str += "   " + "     ".join(str(i) for i in range(1,self.cols+1)) + "  \n"
         return display_str
     def evaluate_window(self, window, piece):
         score = 0

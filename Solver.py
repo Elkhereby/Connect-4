@@ -229,6 +229,10 @@ class Solver:
             return best_col, value
 
 
+
+
+
+
 if __name__=="__main__":
     board = Board()
     c=0

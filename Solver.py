@@ -60,17 +60,7 @@ class Solver:
 
     def MiniMax_alpha_beta_pruning(self, board, depth, alpha, beta, is_maximizer=True):
         if depth >= self.max_depth or board.available_places == 0:
-            if board.available_places == 0:
-                player_4s = self.count_fours(board.current_state, self.player_piece)
-                ai_4s = self.count_fours(board.current_state, self.ai_piece)
-                if player_4s > ai_4s:
-                    return (None, -math.inf)
-                elif ai_4s > player_4s:
-                    return (None, math.inf)
-                else:
-                    return (None, 0)
-            else:
-                return (None, board.calculate_score(self.ai_piece))
+            return self.evaluate_leaf(board)
 
         if is_maximizer:
             value = -math.inf
@@ -110,20 +100,21 @@ class Solver:
         random.shuffle(valid_columns)
         return valid_columns
 
-
+    def evaluate_leaf(self,board):
+        if board.available_places == 0:
+            player_4s = self.count_fours(board.current_state, self.player_piece)
+            ai_4s = self.count_fours(board.current_state, self.ai_piece)
+            if player_4s > ai_4s:
+                return (None, -math.inf)
+            elif ai_4s > player_4s:
+                return (None, math.inf)
+            elif player_4s == ai_4s:
+                return (None, 0)
+        else:
+            return (None, board.calculate_score(self.ai_piece))
     def MiniMax(self,board,depth,is_maximizer=True,):
         if depth>=self.max_depth or board.available_places==0:
-            if board.available_places==0:
-                player_4s = self.count_fours(board.current_state,self.player_piece)
-                ai_4s = self.count_fours(board.current_state,self.ai_piece)
-                if player_4s>ai_4s:
-                    return (None,-math.inf)
-                elif ai_4s>player_4s:
-                    return (None,math.inf)
-                elif player_4s==ai_4s:
-                    return (None,0)
-            else:
-                return (None,board.calculate_score(self.ai_piece))
+            return self.evaluate_leaf(board)
 
         if is_maximizer:
             value = -math.inf
@@ -150,31 +141,36 @@ class Solver:
                     best_col = col
 
             return best_col, value
-    def get_cols(self,board,col):
-        if col == 0:  # Left edge
-            probability_distribution = [0.6, 0.4]
-            columns = [col, col + 1]
-        elif col == board.cols - 1:  # Right edge
-            probability_distribution = [0.4, 0.6]
-            columns = [col - 1, col]
-        else:
+
+    def get_cols(self, board, col):
+        columns = []
+        probability_distribution = []
+
+        # Check if the left column exists and has space
+        if col - 1 >= 0 and board.first_empty_tile(col - 1) is not None:
+            columns.append(col - 1)
+
+        # Check if the current column has space
+        if board.first_empty_tile(col) is not None:
+            columns.append(col)
+
+        # Check if the right column exists and has space
+        if col + 1 < board.cols and board.first_empty_tile(col + 1) is not None:
+            columns.append(col + 1)
+
+        # Adjust the probability distribution based on the number of valid columns
+        if len(columns) == 3:
             probability_distribution = [0.2, 0.6, 0.2]
-            columns = [col - 1, col, col + 1]
-        return columns,probability_distribution
+        elif len(columns) == 2:
+            probability_distribution = [0.6, 0.4] if columns[0] == col else [0.4, 0.6]
+        elif len(columns) == 1:
+            probability_distribution = [1.0]
+
+        return columns, probability_distribution
 
     def ExpectiMiniMax(self, board, depth, is_maximizer=True):
         if depth >= self.max_depth or board.available_places == 0:
-            if board.available_places == 0:
-                player_4s = self.count_fours(board.current_state, self.player_piece)
-                ai_4s = self.count_fours(board.current_state, self.ai_piece)
-                if player_4s > ai_4s:
-                    return (None, -math.inf)
-                elif ai_4s > player_4s:
-                    return (None, math.inf)
-                else:
-                    return (None, 0)
-            else:
-                return (None, board.calculate_score(self.ai_piece))
+            return self.evaluate_leaf(board)
 
         if is_maximizer:
             value = -math.inf
@@ -238,7 +234,7 @@ if __name__=="__main__":
     c=0
     while board.available_places>=0:
         if c%2==0:
-            solver = Solver(depth=8)
+            solver = Solver(depth=5)
 
 
             st = time.time()
@@ -250,7 +246,7 @@ if __name__=="__main__":
 
 
 
-            print(f"Time taken  By AlphaBetaPruning = {t2:.2f} By AlphaBeta Pruning = {col_1}")
+            print(f"Time taken  = {t2:.2f} Col = {col_1}")
             board.add_piece(col_1,1.0)
 
         else:

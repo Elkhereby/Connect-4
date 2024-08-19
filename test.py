@@ -11,7 +11,7 @@ def test_8062(state, player_id):
         if player_id % 2 == 0:
             col, value = solver.solve(board, solver="alphabetapruning")
             board.add_piece(col, 1.0)
-            print(col)
+            print(col+1)
         else:
 
             col = int(input(("Enter Column (1-7): ")))

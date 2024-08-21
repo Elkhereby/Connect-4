@@ -44,16 +44,20 @@ class Board:
         opp_piece = 1 if piece == 2 else 2  # Assuming 1 is PLAYER_PIECE and 2 is AI_PIECE
 
         if window.count(piece) == 4:
-            score += 100
+            score += 1000
         elif window.count(piece) == 3 and window.count(0) == 1:
             score += 5
         elif window.count(piece) == 2 and window.count(0) == 2:
             score += 2
 
         if window.count(opp_piece) == 3 and window.count(0) == 1:
-            score -= 4
+            score -= 5
+        if window.count(opp_piece) == 4:
+            score -= 1000
 
         return score
+
+
 
     def calculate_score(self, piece):#piece is 1 or 2
         score = 0

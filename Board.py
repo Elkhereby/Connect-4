@@ -21,6 +21,8 @@ class Board:
     def load_board(self,state):
         if state is not None:
             self.current_state = np.array(state)
+
+            print(self.current_state)
             self.rows,self.cols = self.current_state.shape
             self.available_places = (self.current_state==0).sum()
 

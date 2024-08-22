@@ -2,7 +2,7 @@ from Board import *
 from Solver import *
 import matplotlib.pyplot as plt
 
-max_depth = 8
+max_depth = 5
 board = Board()
 time_minmax = []
 time_alpha_beta = []

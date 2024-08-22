@@ -52,6 +52,13 @@ screen = pygame.display.set_mode(size)
 myfont = pygame.font.SysFont("monospace", 75)
 
 board = Board()
+b = [[1., 2., 1., 0., 0., 0., 0.],
+ [2. ,1. ,1. ,2. ,0. ,0., 0.],
+ [1., 2., 2., 2., 1., 0., 0.],
+ [2. ,1. ,1. ,1. ,2. ,0. ,0.],
+ [1., 2., 2., 2., 1., 0., 0.],
+ [1. ,1. ,1. ,1. ,2. ,0. ,0.]]
+#board.load_board(b)
 game_over = False
 solver = Solver(depth=8)
 turn = random.choice([0, 1])
@@ -209,6 +216,7 @@ while True:
 
         if turn % 2 != 0:
             if not game_over:
+                print(board)
                 solver.algorithm = algorithm
                 st = time.time()
                 col, _ = solver.solve(board)

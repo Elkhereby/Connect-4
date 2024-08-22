@@ -18,36 +18,34 @@ class Solver:
         self.draw_tree = draw_tree
         self.tree = Tree(root_value=0,
                          root_type="Max") if draw_tree else None  # Initialize the tree if draw_tree is True
-
+        self.node_counter = 0
     def solve(self, board):
         col = None
         value = None
-        count = 0
+        self.node_counter = 0
         if self.tree is None:
             self.tree = Tree(root_value=0,
                              root_type="Max")
         root_node = self.tree.root if self.draw_tree else None
 
         if self.algorithm.lower() == "minmax".lower():
-            col, value, count = self.MiniMax(board, 0, True, root_node)
-
+            col, value = self.MiniMax(board, 0, True, root_node)
         elif self.algorithm.lower() == "α-β Pruning".lower():
-            col, value,count = self.MiniMax_alpha_beta_pruning(board, 0, -math.inf, math.inf, True, root_node)
+            col, value = self.MiniMax_alpha_beta_pruning(board, 0, -math.inf, math.inf, True, root_node)
         elif self.algorithm.lower() == "ExpectMiniMax".lower():
-            col, value,count = self.ExpectiMiniMax(board, 0, True, root_node)
-
-        print("Num Nodes = ", count)
+            col, value = self.ExpectiMiniMax(board, 0, True, root_node)
+        print("Num Nodes = ",self.node_counter)
 
 
         return col, value
 
     @lru_cache(maxsize=None)
-    def MiniMax_alpha_beta_pruning(self, board, depth, alpha, beta, is_maximizer=True, node=None,c=0):
-        c+=1
+    def MiniMax_alpha_beta_pruning(self, board, depth, alpha, beta, is_maximizer=True, node=None):
+        self.node_counter+=1
         if depth >= self.max_depth or board.available_places == 0:
             if self.draw_tree and node:
                 node.value = self.evaluate_board(board)[1]
-            return None, self.evaluate_board(board)[1],c
+            return None, self.evaluate_board(board)[1]
 
         cols = self.get_neighbors(board)
         if is_maximizer:
@@ -57,7 +55,7 @@ class Solver:
             for col in cols:
                 board.add_piece(col, self.ai_piece)
                 child_node = self.tree.add_node(node, 0, "Min") if self.draw_tree else None
-                _, score,c = self.MiniMax_alpha_beta_pruning(board, depth + 1, alpha, beta, False, child_node,c)
+                _, score = self.MiniMax_alpha_beta_pruning(board, depth + 1, alpha, beta, False, child_node)
                 board.remove_piece(col)  # Undo move
 
                 if score > value:
@@ -68,7 +66,7 @@ class Solver:
                     break
             if self.draw_tree and node:
                 node.value = value
-            return best_col, value,c
+            return best_col, value
         else:
             value = math.inf
             best_col = None
@@ -76,7 +74,7 @@ class Solver:
             for col in cols:
                 board.add_piece(col, self.player_piece)
                 child_node = self.tree.add_node(node, 0, "Max") if self.draw_tree else None
-                _, score, c = self.MiniMax_alpha_beta_pruning(board, depth + 1, alpha, beta, True, child_node)
+                _, score = self.MiniMax_alpha_beta_pruning(board, depth + 1, alpha, beta, True, child_node)
                 board.remove_piece(col)  # Undo move
 
                 if score < value:
@@ -87,15 +85,15 @@ class Solver:
                     break
             if self.draw_tree and node:
                 node.value = value
-            return best_col, value,c
+            return best_col, value
 
     @lru_cache(maxsize=None)
-    def MiniMax(self, board, depth, is_maximizer=True, node=None,c=0):
-        c += 1
+    def MiniMax(self, board, depth, is_maximizer=True, node=None):
+        self.node_counter += 1
         if depth >= self.max_depth or board.available_places == 0:
             if self.draw_tree and node:
                 node.value = self.evaluate_board(board)[1]
-            return None, self.evaluate_board(board)[1],c
+            return None, self.evaluate_board(board)[1]
 
         cols = self.get_neighbors(board)
         if is_maximizer:
@@ -105,7 +103,7 @@ class Solver:
             for col in cols:
                 board.add_piece(col, self.ai_piece)
                 child_node = self.tree.add_node(node, 0, "Min") if self.draw_tree else None
-                _, score,c = self.MiniMax(board, depth + 1, False, child_node,c)
+                _, score = self.MiniMax(board, depth + 1, False, child_node)
                 board.remove_piece(col)  # Undo move
 
                 if score > value:
@@ -113,7 +111,7 @@ class Solver:
                     best_col = col
             if self.draw_tree and node:
                 node.value = value
-            return best_col, value,c
+            return best_col, value
         else:
             value = math.inf
             best_col = None
@@ -121,7 +119,7 @@ class Solver:
             for col in cols:
                 board.add_piece(col, self.player_piece)
                 child_node = self.tree.add_node(node, 0, "Max") if self.draw_tree else None
-                _, score, c = self.MiniMax(board, depth + 1, True, child_node,c)
+                _, score = self.MiniMax(board, depth + 1, True, child_node)
                 board.remove_piece(col)  # Undo move
 
                 if score < value:
@@ -129,15 +127,15 @@ class Solver:
                     best_col = col
             if self.draw_tree and node:
                 node.value = value
-            return best_col, value,c
+            return best_col, value
 
     @lru_cache(maxsize=None)
-    def ExpectiMiniMax(self, board, depth, is_maximizer=True, node=None,counter=0):
-        counter+=1
+    def ExpectiMiniMax(self, board, depth, is_maximizer=True, node=None):
+        self.node_counter += 1
         if depth >= self.max_depth or board.available_places == 0:
             if self.draw_tree and node:
                 node.value = self.evaluate_board(board)[1]
-            return None, self.evaluate_board(board)[1],counter
+            return None, self.evaluate_board(board)[1]
 
         cols = self.get_neighbors(board)
         if is_maximizer:
@@ -152,7 +150,7 @@ class Solver:
                 for idx, col_to_simulate in enumerate(columns):
                     board.add_piece(col_to_simulate, self.ai_piece)
                     grandchild_node = self.tree.add_node(child_node, 0, "Min") if self.draw_tree else None
-                    _, value,counter = self.ExpectiMiniMax(board, depth + 1, False, grandchild_node,counter)
+                    _, value = self.ExpectiMiniMax(board, depth + 1, False, grandchild_node)
                     board.remove_piece(col_to_simulate)  # Undo move
                     expected_value += probabilities[idx] * value
 
@@ -162,7 +160,7 @@ class Solver:
 
             if self.draw_tree and node:
                 node.value = max_value
-            return best_col, max_value,counter
+            return best_col, max_value
 
         else:
             min_value = math.inf
@@ -176,7 +174,7 @@ class Solver:
                 for idx, col_to_simulate in enumerate(columns):
                     board.add_piece(col_to_simulate, self.player_piece)
                     grandchild_node = self.tree.add_node(child_node, 0, "Max") if self.draw_tree else None
-                    _, value,counter = self.ExpectiMiniMax(board, depth + 1, True, grandchild_node,counter)
+                    _, value = self.ExpectiMiniMax(board, depth + 1, True, grandchild_node)
                     board.remove_piece(col_to_simulate)  # Undo move
                     expected_value += probabilities[idx] * value
 
@@ -186,7 +184,7 @@ class Solver:
 
             if self.draw_tree and node:
                 node.value = min_value
-            return best_col, min_value,counter
+            return best_col, min_value
 
     def evaluate_board(self, board):
         if board.available_places == 0:
@@ -265,9 +263,12 @@ if __name__ == "__main__":
     c = 0
     while board.available_places >= 0:
         if c % 2 == 0:
-            solver = Solver(depth=5, draw_tree=False,algorithm="MinMax")
+            solver = Solver(depth=5, draw_tree=True)
+
+
             st = time.time()
             col_1, value = solver.solve(board)
+            print("tree = ", solver.tree)
             end = time.time()
             t2 = float(end - st)
             print(f"Time taken  = {t2:.2f} Col = {col_1}")

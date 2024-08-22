@@ -21,6 +21,8 @@ class Board:
     def load_board(self,state):
         if state is not None:
             self.current_state = np.array(state)
+
+            print(self.current_state)
             self.rows,self.cols = self.current_state.shape
             self.available_places = (self.current_state==0).sum()
 
@@ -44,16 +46,20 @@ class Board:
         opp_piece = 1 if piece == 2 else 2  # Assuming 1 is PLAYER_PIECE and 2 is AI_PIECE
 
         if window.count(piece) == 4:
-            score += 100
+            score += 1000
         elif window.count(piece) == 3 and window.count(0) == 1:
             score += 5
         elif window.count(piece) == 2 and window.count(0) == 2:
             score += 2
 
         if window.count(opp_piece) == 3 and window.count(0) == 1:
-            score -= 4
+            score -= 5
+        if window.count(opp_piece) == 4:
+            score -= 1000
 
         return score
+
+
 
     def calculate_score(self, piece):#piece is 1 or 2
         score = 0
@@ -128,6 +134,17 @@ if __name__=="__main__":
     board.add_piece(1, 1)
     board.add_piece(1, 2)
     board.add_piece(0, 1)
+    board.add_piece(3, 1)
+    board.add_piece(3, 2)
+    board.add_piece(5, 1)
+    board.add_piece(5, 2)
+    board.add_piece(0, 1)
+    board.add_piece(0, 2)
+    board.add_piece(0, 1)
+    board.add_piece(0, 2)
+    board.add_piece(0, 1)
+    board.add_piece(3, 2)
+
     print(board.available_places)
     print("Board state:")
     st= time.time()

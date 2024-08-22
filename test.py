@@ -1,24 +1,40 @@
-import Solver
+from Solver import *
 from Board import *
-import numpy as np
-import Solver_old
-def test_8062(state, player_id):
+import time
+def test_8062(board_state, player_id):
+    if player_id == 1:
+        opponent = 2
+    else:
+        opponent = 1
     board = Board()
-    board.load_board(state)
-    solver = Solver.Solver(depth=8)
-    solver_2 = Solver_old.Solver(depth=8,Ai_piece=2,player_piece=1)
-    while board.available_places >= 0:
-        if player_id % 2 == 0:
-            col, value = solver.solve(board, solver="alphabetapruning")
-            board.add_piece(col, 1.0)
-            print(col+1)
-        else:
+    board.load_board(board_state)
+    solver = Solver(depth=8,Ai_piece=player_id,player_piece=opponent,algorithm="α-β Pruning",draw_tree=False)
 
-            col, value = solver_2.solve(board, solver="alphabetapruning")
-            board.add_piece(col, 2.0)
-        print(board)
-        player_id+=1
+    st = time.time()
+    col, _ = solver.solve(board)
+    end = time.time()
+    if col is None:
+        return None
+    return int(col+1),float(end-st)
 
 
 if __name__=="__main__":
-    test_8062(np.zeros((6,7)),0)
+
+    board = Board()
+    print(board, '\n')
+    player_id = 1
+    turn = player_id
+
+    while board.available_places >= 0:
+        if turn != player_id:
+            solver2 = Solver(depth=8, Ai_piece=2, player_piece=1)
+            col, _ = solver2.solve(board)
+            board.add_piece(col, 2)
+        else:
+            col,t = test_8062(board.current_state, player_id)
+            board.add_piece(col-1, player_id)
+        print(board, '\n')
+        turn += 1
+        turn = turn % 2
+        print("turn = ",turn)
+

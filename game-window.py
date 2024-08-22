@@ -1,13 +1,12 @@
 import random
 import sys
 import time
-
 import numpy as np
 import pygame
 from Solver import *
 from Board import *
 
-pygame.init()
+from threading import  Thread
 pygame.init()
 
 # Colors
@@ -15,8 +14,10 @@ BLUE = (0, 0, 255)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
-YELLOW = (255, 255, 0)
 GREEN = (0, 255, 0)
+
+YELLOW = (255, 255, 0)
+PURPLE = (38, 3, 57)
 
 # Game board dimensions
 SQUARE_SIZE = 100
@@ -29,17 +30,18 @@ width = SQUARE_SIZE * COLUMN_COUNT
 height = SQUARE_SIZE * (ROW_COUNT + 1)
 
 # Button properties
-BUTTON_WIDTH, BUTTON_HEIGHT = 180, 50  # Decreased width
-BUTTON_COLOR = GREEN
+BUTTON_WIDTH, BUTTON_HEIGHT = 140, 50  # Adjusted width to fit four buttons
+BUTTON_COLOR = PURPLE
 HOVER_COLOR = RED
-BUTTON_FONT = pygame.font.Font(None, 30)
-BUTTON_TEXTS = ["MinMax", "α-β Pruning", "ExpectMiniMax"]
+BUTTON_FONT = pygame.font.Font(None, 25)
+BUTTON_TEXTS = ["MinMax", "α-β Pruning", "ExpectMiniMax", "Draw"]
 
 # Position buttons horizontally beside each other under the board
 BUTTON_POSITION = [
-    (60, height + 10),
-    (270, height + 10),
-    (480, height + 10)
+    (30, height + 10),
+    (190, height + 10),
+    (350, height + 10),
+    (510, height + 10)
 ]
 
 # Adjusted window size to accommodate buttons
@@ -52,14 +54,16 @@ myfont = pygame.font.SysFont("monospace", 75)
 board = Board()
 game_over = False
 solver = Solver(depth=8)
-turn = random.choice([0,1])
+turn = random.choice([0, 1])
 
+THREADS = []
 def draw_button(screen, position, text, button_color):
     rect = pygame.Rect(position, (BUTTON_WIDTH, BUTTON_HEIGHT))
     pygame.draw.rect(screen, button_color, rect)
     text_surface = BUTTON_FONT.render(text, True, WHITE)
     text_rect = text_surface.get_rect(center=rect.center)
     screen.blit(text_surface, text_rect)
+
 
 def probabilistic_column_selection(col):
     if col == 0:  # Left edge
@@ -94,6 +98,7 @@ def draw_board(board):
                     int(c * SQUARE_SIZE + SQUARE_SIZE / 2), height - int(((ROW_COUNT - 1) - r) * SQUARE_SIZE + SQUARE_SIZE / 2)), RADIUS)
     pygame.display.update()
 
+
 # Draw the initial empty board
 draw_board(board.current_state)
 
@@ -121,7 +126,12 @@ while True:
                         color = HOVER_COLOR if selected_button != i else RED
                         draw_button(screen, pos, BUTTON_TEXTS[i], color)
                     else:
-                        color = GREEN if selected_button != i else RED
+                        color = PURPLE if selected_button != i else RED
+                        if BUTTON_TEXTS[i].lower()=="draw":
+                            color = PURPLE
+                            if solver.draw_tree:
+                                color = GREEN
+
                         draw_button(screen, pos, BUTTON_TEXTS[i], color)
 
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -129,7 +139,7 @@ while True:
             posx = event.pos[0]
             posy = event.pos[1]
             col = int(posx / SQUARE_SIZE)
-            if posy<=550:
+            if posy <= 550:
                 if algorithm == "Expectimax":
                     col = probabilistic_column_selection(col)
                 if board.first_empty_tile(col) is not None:
@@ -149,8 +159,14 @@ while True:
                     rect = pygame.Rect(pos, (BUTTON_WIDTH, BUTTON_HEIGHT))
                     if rect.collidepoint(mouse_pos):
                         selected_button = i
-                        algorithm = BUTTON_TEXTS[i].lower()
-                        print("algorithm = ",algorithm)
+                        if BUTTON_TEXTS[i].lower()!="draw":
+                            algorithm = BUTTON_TEXTS[i].lower()
+                        else:
+                            solver.draw_tree = not(solver.draw_tree)
+
+
+
+                        print("algorithm = ", algorithm,"draw = ",solver.draw_tree)
 
                         break
 
@@ -178,7 +194,7 @@ while True:
             # Display the Game Over screen
             screen.fill(BLACK)
             game_over_font = pygame.font.SysFont("monospace", 75)
-            game_over_text = game_over_font.render("GAME OVER", True, GREEN)
+            game_over_text = game_over_font.render("GAME OVER", True, RED)
             winner_text_render = myfont.render(winner_text, True, color)
             score_text_render = myfont.render(f"Red: {red_score} - Yellow: {yellow_score}", True, color)
             game_over_text_rect = game_over_text.get_rect(center=(width / 2, height / 2 - 100))
@@ -200,5 +216,15 @@ while True:
 
                 board.add_piece(col, 1.0)  # AI player (YELLOW)
                 draw_board(board.current_state)
-                print("AI", col,"Time Taken",str(end-st))
+                if solver.draw_tree:
+                    filename = f"tree_{turn + 1}.svg"
+                    tree_thread = Thread(target=solver.tree.draw_tree, args=(filename,))
+                    tree_thread.start()
+                    THREADS.append(tree_thread)
+
+                print("AI", col, "Time Taken", str(end - st))
                 turn += 1
+
+                # Ensure all threads complete before closing
+    for thread in THREADS:
+        thread.join()

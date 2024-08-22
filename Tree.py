@@ -1,5 +1,8 @@
 import networkx as nx
 import matplotlib.pyplot as plt
+from io import BytesIO
+import matplotlib
+matplotlib.use('agg')
 
 class Node:
     def __init__(self, value=0, type="Max"):
@@ -15,7 +18,6 @@ class Node:
         for child in self.children:
             ret += child.__repr__(level + 1)
         return ret
-
 
 class Tree:
     def __init__(self, root_value=0, root_type="Max"):
@@ -52,7 +54,9 @@ class Tree:
 
     def __repr__(self):
         return self.root.__repr__()
-    def draw_tree(self):
+
+    def draw_tree(self, filename="tree.svg"):
+
         G = nx.DiGraph()
 
         # Build the graph
@@ -63,22 +67,7 @@ class Tree:
 
         plt.figure(figsize=(12, 12))
         nx.draw(G, pos, labels=labels, node_color=colors, node_size=3000, font_size=10, font_color="white")
-        plt.show()
+        plt.savefig(filename, format="svg")
+        plt.close()
 
-
-if __name__ == "__main__":
-    # Usage Example:
-    tree = Tree(0, "Max")
-
-    # Add nodes to the tree
-    child1 = tree.add_node(tree.root, 3, "Min")
-    child2 = tree.add_node(tree.root, 5, "Min")
-    child3 = tree.add_node(tree.root, 2, "Min")
-    child4 = tree.add_node(tree.root, 1, "Min")
-
-    grandchild1 = tree.add_node(child1, 2, "Max")
-    grandchild2 = tree.add_node(child1, 4, "Max")
-    grandchild3 = tree.add_node(child2, 6, "Max")
-
-    # Draw the tree with Matplotlib and networkx
-    tree.draw_tree()
+        return filename

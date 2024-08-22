@@ -1,33 +1,48 @@
 from functools import lru_cache
 import numpy as np
-from Board import Board
 import random
 import time
-from functools import lru_cache
 import math
-from Tree import *
+from Tree import Tree, Node
+from Board import *
+import concurrent.futures
+from threading import Thread
+
+
 class Solver:
-    def __init__(self, depth=8, Ai_piece=1, player_piece=2, algorithm="α-β Pruning"):
+    def __init__(self, depth=8, Ai_piece=1, player_piece=2, algorithm="α-β Pruning", draw_tree=False):
         self.max_depth = depth
         self.ai_piece = Ai_piece
         self.player_piece = player_piece
         self.algorithm = algorithm
+        self.draw_tree = draw_tree
+        self.tree = Tree(root_value=0,
+                         root_type="Max") if draw_tree else None  # Initialize the tree if draw_tree is True
 
     def solve(self, board):
         col = None
         value = None
+        if self.tree is None:
+            self.tree = Tree(root_value=0,
+                             root_type="Max")
+        root_node = self.tree.root if self.draw_tree else None
+
         if self.algorithm.lower() == "minmax".lower():
-            col, value = self.MiniMax(board, 0, True)
+            col, value = self.MiniMax(board, 0, True, root_node)
         elif self.algorithm.lower() == "α-β Pruning".lower():
-            col, value = self.MiniMax_alpha_beta_pruning(board, 0, -math.inf, math.inf, True)
+            col, value = self.MiniMax_alpha_beta_pruning(board, 0, -math.inf, math.inf, True, root_node)
         elif self.algorithm.lower() == "ExpectMiniMax".lower():
-            col, value = self.ExpectiMiniMax(board, 0, True)
+            col, value = self.ExpectiMiniMax(board, 0, True, root_node)
+
+
         return col, value
 
     @lru_cache(maxsize=None)
-    def MiniMax_alpha_beta_pruning(self, board, depth, alpha, beta, is_maximizer=True):
+    def MiniMax_alpha_beta_pruning(self, board, depth, alpha, beta, is_maximizer=True, node=None):
         if depth >= self.max_depth or board.available_places == 0:
-            return self.evaluate_board(board)
+            if self.draw_tree and node:
+                node.value = self.evaluate_board(board)[1]
+            return None, self.evaluate_board(board)[1]
 
         cols = self.get_neighbors(board)
         if is_maximizer:
@@ -36,7 +51,8 @@ class Solver:
 
             for col in cols:
                 board.add_piece(col, self.ai_piece)
-                _, score = self.MiniMax_alpha_beta_pruning(board, depth + 1, alpha, beta, False)
+                child_node = self.tree.add_node(node, 0, "Min") if self.draw_tree else None
+                _, score = self.MiniMax_alpha_beta_pruning(board, depth + 1, alpha, beta, False, child_node)
                 board.remove_piece(col)  # Undo move
 
                 if score > value:
@@ -45,6 +61,8 @@ class Solver:
                 alpha = max(alpha, value)
                 if alpha >= beta:
                     break
+            if self.draw_tree and node:
+                node.value = value
             return best_col, value
         else:
             value = math.inf
@@ -52,7 +70,8 @@ class Solver:
 
             for col in cols:
                 board.add_piece(col, self.player_piece)
-                _, score = self.MiniMax_alpha_beta_pruning(board, depth + 1, alpha, beta, True)
+                child_node = self.tree.add_node(node, 0, "Max") if self.draw_tree else None
+                _, score = self.MiniMax_alpha_beta_pruning(board, depth + 1, alpha, beta, True, child_node)
                 board.remove_piece(col)  # Undo move
 
                 if score < value:
@@ -61,12 +80,16 @@ class Solver:
                 beta = min(beta, value)
                 if alpha >= beta:
                     break
+            if self.draw_tree and node:
+                node.value = value
             return best_col, value
 
     @lru_cache(maxsize=None)
-    def MiniMax(self, board, depth, is_maximizer=True):
+    def MiniMax(self, board, depth, is_maximizer=True, node=None):
         if depth >= self.max_depth or board.available_places == 0:
-            return self.evaluate_board(board)
+            if self.draw_tree and node:
+                node.value = self.evaluate_board(board)[1]
+            return None, self.evaluate_board(board)[1]
 
         cols = self.get_neighbors(board)
         if is_maximizer:
@@ -75,13 +98,15 @@ class Solver:
 
             for col in cols:
                 board.add_piece(col, self.ai_piece)
-                _, score = self.MiniMax(board, depth + 1, False)
+                child_node = self.tree.add_node(node, 0, "Min") if self.draw_tree else None
+                _, score = self.MiniMax(board, depth + 1, False, child_node)
                 board.remove_piece(col)  # Undo move
 
                 if score > value:
                     value = score
                     best_col = col
-
+            if self.draw_tree and node:
+                node.value = value
             return best_col, value
         else:
             value = math.inf
@@ -89,19 +114,23 @@ class Solver:
 
             for col in cols:
                 board.add_piece(col, self.player_piece)
-                _, score = self.MiniMax(board, depth + 1, True)
+                child_node = self.tree.add_node(node, 0, "Max") if self.draw_tree else None
+                _, score = self.MiniMax(board, depth + 1, True, child_node)
                 board.remove_piece(col)  # Undo move
 
                 if score < value:
                     value = score
                     best_col = col
-
+            if self.draw_tree and node:
+                node.value = value
             return best_col, value
 
     @lru_cache(maxsize=None)
-    def ExpectiMiniMax(self, board, depth, is_maximizer=True):
+    def ExpectiMiniMax(self, board, depth, is_maximizer=True, node=None):
         if depth >= self.max_depth or board.available_places == 0:
-            return self.evaluate_board(board)
+            if self.draw_tree and node:
+                node.value = self.evaluate_board(board)[1]
+            return None, self.evaluate_board(board)[1]
 
         cols = self.get_neighbors(board)
         if is_maximizer:
@@ -111,10 +140,12 @@ class Solver:
             for col in cols:
                 expected_value = 0
                 columns, probabilities = self.get_cols(board, col)
+                child_node = self.tree.add_node(node, 0, "Chance") if self.draw_tree else None
 
                 for idx, col_to_simulate in enumerate(columns):
                     board.add_piece(col_to_simulate, self.ai_piece)
-                    _, value = self.ExpectiMiniMax(board, depth + 1, False)
+                    grandchild_node = self.tree.add_node(child_node, 0, "Min") if self.draw_tree else None
+                    _, value = self.ExpectiMiniMax(board, depth + 1, False, grandchild_node)
                     board.remove_piece(col_to_simulate)  # Undo move
                     expected_value += probabilities[idx] * value
 
@@ -122,6 +153,8 @@ class Solver:
                     max_value = expected_value
                     best_col = col
 
+            if self.draw_tree and node:
+                node.value = max_value
             return best_col, max_value
 
         else:
@@ -131,10 +164,12 @@ class Solver:
             for col in cols:
                 expected_value = 0
                 columns, probabilities = self.get_cols(board, col)
+                child_node = self.tree.add_node(node, 0, "Chance") if self.draw_tree else None
 
                 for idx, col_to_simulate in enumerate(columns):
                     board.add_piece(col_to_simulate, self.player_piece)
-                    _, value = self.ExpectiMiniMax(board, depth + 1, True)
+                    grandchild_node = self.tree.add_node(child_node, 0, "Max") if self.draw_tree else None
+                    _, value = self.ExpectiMiniMax(board, depth + 1, True, grandchild_node)
                     board.remove_piece(col_to_simulate)  # Undo move
                     expected_value += probabilities[idx] * value
 
@@ -142,6 +177,8 @@ class Solver:
                     min_value = expected_value
                     best_col = col
 
+            if self.draw_tree and node:
+                node.value = min_value
             return best_col, min_value
 
     def evaluate_board(self, board):
@@ -188,6 +225,7 @@ class Solver:
             probability_distribution = [1.0]
 
         return columns, probability_distribution
+
     def count_fours(self, board, piece):
         count = 0
         rows, cols = board.shape
@@ -213,31 +251,28 @@ class Solver:
                     count += 1
 
         return count
-if __name__=="__main__":
+
+
+if __name__ == "__main__":
     board = Board()
-    c=0
-    while board.available_places>=0:
-        if c%2==0:
-            solver = Solver(depth=8)
-
+    c = 0
+    while board.available_places >= 0:
+        if c % 2 == 0:
+            solver = Solver(depth=8, draw_tree=True)
             st = time.time()
-
             col_1, value = solver.solve(board)
-            #print(col_1)
             end = time.time()
-            t2 = float(end-st)
-
-
-
-
-
+            t2 = float(end - st)
             print(f"Time taken  = {t2:.2f} Col = {col_1}")
-            board.add_piece(col_1,1.0)
-
+            board.add_piece(col_1, 1.0)
         else:
             print(board)
-            col = int(input(("Enter Column: ")))
-            board.add_piece(col,2.0)
-        c+=1
+            col = int(input("Enter Column: "))
+            board.add_piece(col, 2.0)
+        c += 1
+        if solver.draw_tree:
+            thread = Thread(target=solver.tree.draw_tree)
+            thread.start()
+
 
     print(board.available_places)

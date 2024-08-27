@@ -18,10 +18,11 @@ class Solver:
         self.draw_tree = draw_tree
         self.tree = Tree(root_value=0,
                          root_type="Max") if draw_tree else None  # Initialize the tree if draw_tree is True
-
+        self.node_counter = 0
     def solve(self, board):
         col = None
         value = None
+        self.node_counter = 0
         if self.tree is None:
             self.tree = Tree(root_value=0,
                              root_type="Max")
@@ -33,12 +34,14 @@ class Solver:
             col, value = self.MiniMax_alpha_beta_pruning(board, 0, -math.inf, math.inf, True, root_node)
         elif self.algorithm.lower() == "ExpectMiniMax".lower():
             col, value = self.ExpectiMiniMax(board, 0, True, root_node)
+        print("Num Nodes = ",self.node_counter)
 
 
         return col, value
 
     @lru_cache(maxsize=None)
     def MiniMax_alpha_beta_pruning(self, board, depth, alpha, beta, is_maximizer=True, node=None):
+        self.node_counter+=1
         if depth >= self.max_depth or board.available_places == 0:
             if self.draw_tree and node:
                 node.value = self.evaluate_board(board)[1]
@@ -86,6 +89,7 @@ class Solver:
 
     @lru_cache(maxsize=None)
     def MiniMax(self, board, depth, is_maximizer=True, node=None):
+        self.node_counter += 1
         if depth >= self.max_depth or board.available_places == 0:
             if self.draw_tree and node:
                 node.value = self.evaluate_board(board)[1]
@@ -127,6 +131,7 @@ class Solver:
 
     @lru_cache(maxsize=None)
     def ExpectiMiniMax(self, board, depth, is_maximizer=True, node=None):
+        self.node_counter += 1
         if depth >= self.max_depth or board.available_places == 0:
             if self.draw_tree and node:
                 node.value = self.evaluate_board(board)[1]
@@ -258,9 +263,12 @@ if __name__ == "__main__":
     c = 0
     while board.available_places >= 0:
         if c % 2 == 0:
-            solver = Solver(depth=8, draw_tree=True)
+            solver = Solver(depth=5, draw_tree=True)
+
+
             st = time.time()
             col_1, value = solver.solve(board)
+            print("tree = ", solver.tree)
             end = time.time()
             t2 = float(end - st)
             print(f"Time taken  = {t2:.2f} Col = {col_1}")

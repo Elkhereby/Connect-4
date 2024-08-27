@@ -54,13 +54,13 @@ myfont = pygame.font.SysFont("monospace", 75)
 board = Board()
 b = [[1., 2., 1., 0., 0., 0., 0.],
  [2. ,1. ,1. ,2. ,0. ,0., 0.],
- [1., 2., 2., 2., 1., 0., 0.],
+ [1., 2., 2., 2., 0., 0., 0.],
  [2. ,1. ,1. ,1. ,2. ,0. ,0.],
  [1., 2., 2., 2., 1., 0., 0.],
  [1. ,1. ,1. ,1. ,2. ,0. ,0.]]
 #board.load_board(b)
 game_over = False
-solver = Solver(depth=8)
+solver = Solver(depth=5)
 turn = random.choice([0, 1])
 
 THREADS = []
@@ -73,6 +73,7 @@ def draw_button(screen, position, text, button_color):
 
 
 def probabilistic_column_selection(col):
+    print("col = ",col)
     if col == 0:  # Left edge
         probability_distribution = [0.6, 0.4]
         columns = [col, col + 1]
@@ -84,7 +85,7 @@ def probabilistic_column_selection(col):
         columns = [col - 1, col, col + 1]
 
     selected_col = random.choices(columns, probability_distribution)[0]
-
+    print("selected_col",selected_col)
     return selected_col
 
 
@@ -147,7 +148,7 @@ while True:
             posy = event.pos[1]
             col = int(posx / SQUARE_SIZE)
             if posy <= 550:
-                if algorithm == "Expectimax":
+                if algorithm == "ExpectMiniMax".lower():
                     col = probabilistic_column_selection(col)
                 if board.first_empty_tile(col) is not None:
                     if turn % 2 == 0:
